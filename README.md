@@ -1,6 +1,6 @@
 # kind-kong
 
-## Dependencies
+## Dependencias
 
 - [Docker](https://docs.docker.com/engine/install/)
 - [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation)
@@ -8,7 +8,7 @@
 - [Helm v3](https://helm.sh/docs/intro/install/)
 
 
-#### Install kubectl and helm using asdf
+#### Instale kubectl e helm usando asdf
 
 ```bash
 asdf plugin add kubectl
@@ -16,12 +16,11 @@ asdf plugin add helm
 asdf install
 ```
 
-## Repository configuration
+## Configuração Repositorio
 
-Because in this tutorial we are going to use ArgoCD it's recommended to [fork](https://github.com/wendellnet/kind-kong/fork) the original project to your personal GitHub account.
+Porque neste tutorial usaremos o Argocd, é recomendável [fork] (https://github.com/wendellnet/kind-kong/fork) o projeto original da sua conta pessoal do github.
 
-Once the fork has completed, edit the following files replacing the `repoURL` variable to your GitHub profile.
-
+Depois que o fork for concluído, edite os seguintes arquivos substituindo a variável `repourl` para o seu perfil do GitHub.
 
 ```bash
 git clone git@github.com:<username>/kind-kong.git
@@ -31,40 +30,40 @@ git clone git@github.com:<username>/kind-kong.git
 # - config/argocd-httpbin-app.yaml
 
 git add config
-git commit -m "Update repoURL to my local GitHub"
+git commit -m "Atualize repourl para o meu github local"
 git push origin main
 ```
 
-## Create Kind cluster
+## Crie um cluster Kind
 
 ```bash
 kind create cluster --name kong --config=resources/kind.yaml
 kind get kubeconfig --name kong > ~/.kube/kind-kong-config
 ```
 
-## Setup kubectl
+## Configuração kubectl
 
 ```bash
-# Setup kubeconfig
+# Configuração kubeconfig
 export KUBECONFIG=~/.kube/kind-kong-config
 
-# Testing configuration
+# testando configuração
 kubectl get nodes
 ```
 
-## MetalLB setup address pool used by loadbalancers
+## MetalLB Pool de endereços de configuração usado por LoadBalancers
 
-To complete layer2 configuration, we need to provide metallb a range of IP addresses it controls.
-We want this range to be on the docker kind network.
+Para preencher a configuração do Layer2, precisamos fornecer o Metallb uma variedade de endereços IP que ele controla.
+Queremos que esse intervalo esteja na rede do tipo Docker.
 
 ```bash
 docker network inspect -f '{{.IPAM.Config}}' kind
 ```
 
-Edit the file [argocd-metallb.yaml](config/argocd-metallb.yaml) adding the ip range you want.
+Edite o arquivo [argocd-metallb.yaml] (config/argocd-metallb.yaml) adicionando o intervalo IP desejado.
 
 
-## Setup `/etc/hosts`
+## Configure `/etc/hosts`
 
 > /etc/hosts
 ```bash
@@ -74,7 +73,7 @@ Edit the file [argocd-metallb.yaml](config/argocd-metallb.yaml) adding the ip ra
 192.168.32.2	argocd.local
 ```
 
-## Install ArgoCD
+## Instale o ArgoCD
 
 ```bash
 helm repo add argo https://argoproj.github.io/argo-helm
@@ -86,26 +85,26 @@ helm install argo-cd argo/argo-cd --create-namespace --namespace argocd --versio
 kubectl get pod -n argocd --watch
 ```
 
-#### Login to argocd
+#### Login no argocd
 
-The initial password for the admin account is auto-generated and stored as clear text in the field password in a secret named argocd-initial-admin-secret in your Argo CD installation namespace.
+A senha inicial da conta do administrador é gerada automaticamente e armazenada como texto claro na senha de campo em um segredo chamado Argocd-Inial-Admin-secret no espaço para nome de instalação do CD do CD do Argo.
 
-You can simply retrieve this password using kubectl:
+Você pode simplesmente recuperar esta senha usando Kubectl:
 
 ```bash
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
 ```
-ZmtGxmOWUfrDygCK
+GZ9NvPCcbNXTioKb
 
-#### Port Forwarding
+#### Encaminhamento de porta
 
-> On a secondary terminal
+> Em um terminal secundário
 
 ```bash
 kubectl port-forward service/argo-cd-argocd-server -n argocd 8080:443
 ```
 
-Go to the argocd webpage [https://localhost:8080](https://localhost:8080) and sync the Argo Application `app-of-apps`.
+Vá para a página da web argocd [https: // localhost: 8080] (https: // localhost: 8080) e sincronize o aplicativo argo `app-of-apps`.
 
 ## Deploy app of apps
 
@@ -113,16 +112,15 @@ Go to the argocd webpage [https://localhost:8080](https://localhost:8080) and sy
 kubectl -n argocd apply -f resources/argocd-app-of-apps.yaml
 ```
 
-## Expose argocd with kong
+## Expor argocd com kong
 
 ```bash
-kubectl -n argocd patch deployment argo-cd-argocd-server --type json \
-    -p='[ { "op": "replace", "path":"/spec/template/spec/containers/0/command","value": ["argocd-server","--staticassets","/shared/app","--repo-server","argo-cd-argocd-repo-server:8081","--dex-server","http://argo-cd-argocd-dex-server:5556","--logformat","text","--loglevel","info","--redis","argo-cd-argocd-redis:6379","--insecure"] }]'
+kubectl -n argocd patch deployment argo-cd-argocd-server --type json -p='[ { "op": "replace", "path":"/spec/template/spec/containers/0/command","value": ["argocd-server","--staticassets","/shared/app","--repo-server","argo-cd-argocd-repo-server:8081","--dex-server","http://argo-cd-argocd-dex-server:5556","--logformat","text","--loglevel","info","--redis","argo-cd-argocd-redis:6379","--insecure"] }]'
 ```
 
-> This command could take some time to reload the Pod.
+> Esse comando pode levar algum tempo para recarregar o Pod.
 
-## Services URLs
+## URLs de serviços
 
 - [argocd](https://argocd.local)
 - [httpbin](https://httpbin.local)
@@ -131,22 +129,28 @@ kubectl -n argocd patch deployment argo-cd-argocd-server --type json \
     - Username: `admin`
     - Password: `kong`
 
-## Deploy native plugins
+## Implantar plug-ins nativos
 
 ```
 kubectl apply -n httpbin -f kong-plugins/rate-limiting.yaml
 kubectl apply -f kong-plugins/prometheus.yaml
 ```
 
-## Custom plugin
+## Verificando headers
 
-The custom plugin is located at [myheader](myheader) folder.
+```bash
+curl -I "http://httpbin.local/headers"
+```
 
-#### Create a ConfigMap or Secret with the plugin code
+## Plugin personalizado
 
-Next, we are going to create a ConfigMap or Secret based on the plugin code.
+O plugin personalizado está localizado na pasta [myheader](myheader).
 
-Please ensure that this is created in the same namespace as the one in which Kong is installed.
+#### Crie um ConfigMap ou Secret com o código do plugin
+
+Em seguida, vamos criar um ConfigMap ou Secret com base no código do plugin.
+
+Certifique-se de que ele seja criado no mesmo namespace que o Kong está instalado.
 
 ```bash
 # using ConfigMap; replace `myheader` with the name of your plugin
@@ -156,38 +160,36 @@ kubectl create configmap kong-plugin-myheader --from-file=myheader -n kong
 kubectl create secret generic -n kong kong-plugin-myheader --from-file=myheader
 ```
 
-#### Install plugin Kong
+#### Instale o plugin Kong
 
-Edit/uncomment the Kong deployment configuration to install the custom plugin under [config/argocd-kong.yaml](config/argocd-kong.yaml)
+Edite/descomente a configuração de implantação do Kong para instalar o plug-in personalizado em [config/argocd-kong.yaml](config/argocd-kong.yaml)
 
 ![kong-custom-plugin-install](images/kong-custom-plugin-install.png)
 
-Add, commit and push your changes to your remote git repository.
-
+Adicione, confirme e envie suas alterações para seu repositório git remoto.
 ```bash
 git add config/argocd-kong.yaml
 git commit -m "configure myheader custom kong plugin"
 git push origin main
 ```
 
-Then reload Kong deployment inside ArgoCD.
+Em seguida, recarregue a implantação do Kong dentro do ArgoCD.
 
-Apply the CRD to kubernetes API.
-
+Aplique o CRD à API do kubernetes.
 ```bash
 kubectl apply -n httpbin -f kong-plugins/custom.yaml
 ```
 
-## Cleanup Kind
+## Excluir Kind
 
 ```bash
 kind delete cluster --name kong
 ```
 
-## Author
+## Autor
 
 Managed by [Wendell](https://github.com/wendellnet).
 
-## License
+## Licença
 
 Apache 2 Licensed. See [LICENSE](https://github.com/wendellnet/kind-kong/blob/master/LICENSE) for full details.
